@@ -167,6 +167,7 @@
 				return midPoint;
 			}
 			midPoint = new SUBRISE.Point(Math.floor(x + that.getXRange()), Math.floor(y + that.getYRange()));
+			return midPoint;
 		};
 
 		this.getWidth = function () {
@@ -192,7 +193,7 @@
 
 			thisYRange = that.getYRange();
 			rectYRange = rectangle.getYRange();
-			if (Math.abs(thisMidPoint.y - rectMidPoint.y) < thisYRange + rectYRange) {
+			if (Math.abs(thisMidPoint.y - rectMidPoint.y) > thisYRange + rectYRange) {
 				return false;
 			}
 
