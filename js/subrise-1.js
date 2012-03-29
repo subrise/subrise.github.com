@@ -1,5 +1,5 @@
 /*!
- * Subrsie JavaScript Library v1.0 beta
+ * Subrise JavaScript Library v1.0 beta
  * http://subrise.com/
  *
  * Copyright 2011, Subrise Games

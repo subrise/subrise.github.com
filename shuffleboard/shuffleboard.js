@@ -226,8 +226,8 @@
 
 		// Setup game elements
 		stones.push(new Stone(window.innerWidth / 2, window.innerHeight / 2));
-		// stones.push(new Stone(window.innerWidth / 2 - 70, window.innerHeight / 2));
-		// stones.push(new Stone(window.innerWidth / 2 - 140, window.innerHeight / 2));
+		stones.push(new Stone(window.innerWidth / 2 - 70, window.innerHeight / 2));
+		stones.push(new Stone(window.innerWidth / 2 - 140, window.innerHeight / 2));
 
 		// Setup Event Handlers
 		if (Modernizr.touch) {
