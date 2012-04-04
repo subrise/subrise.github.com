@@ -10,27 +10,35 @@
 (function (window, document, SR, undefined) {
 	var game = new SR.Game(),
 		// Defining classes
-		Ship = function () {
+		Ship = function (pPosition) {
 			var texture = new Image(),
-				imagesLoaded = false,
-				position = SR.Point(),
-				velocity = SR.Point(),
+				textures       = [],
+				imagesLoaded   = false,
+				position       = pPosition || SR.Point(),
+				velocity       = SR.Point(),
 				isDescending   = false,
 				isAscending    = false,
 				isRollingLeft  = false,
 				isRollingRight = false,
-				width  = 246,
-				height = 70,
-				halfWidth = width / 2,
-				halfHeight = height / 2,
-				speed  = 1,
-				maxSpeed = 25,
-				drag = 0.9;
+				width          = 320,
+				height         = 240,
+				halfWidth      = width / 2,
+				halfHeight     = height / 2,
+				speed          = 1,
+				maxSpeed       = 25,
+				drag           = 0.9,
+				i;
 
-			texture.src = './img/spaceship_top_view.png';
-			texture.addEventListener('load', function () {
-				imagesLoaded = true;
-			}, false);
+			for (i = 0; i < 10; i +=1) {
+				textures[i] = new Image();
+				textures[i].src = './img/render/spaceship000'+i+'.png';
+			}
+			for (i = 10; i < 61; i +=1) {
+				textures[i] = new Image();
+				textures[i].src = './img/render/spaceship00'+i+'.png';
+			}
+			// Todo check when images have loaded
+			imagesLoaded = true;
 
 			this.gameComponent = new SR.GameComponent();
 
@@ -97,16 +105,17 @@
 				} else if (position.x > 539) {
 					position.x = 539;
 				} 
-				if (position.y < 0) {
-					position.y = 0;
-				} else if (position.y > 299) {
-					position.y = 299;
+				if (position.y < 50) {
+					position.y = 50;
+				} else if (position.y > 220) {
+					position.y = 220;
 				}
 			};
 
 			this.gameComponent.draw = function (c) {
+				var dx = Math.floor(299 / 60);
 				if (imagesLoaded) {
-					c.drawImage(texture, position.x - halfWidth, position.y - halfHeight);
+					c.drawImage(textures[Math.floor(position.y / dx)], position.x - halfWidth, position.y - halfHeight);
 				}
 			};
 		},
@@ -127,7 +136,7 @@
 	// Initializing and playing game when window has loaded
 	window.addEventListener('load', function () {
 		game.init(539, 299);
-		ship = new Ship();
+		ship = new Ship(new SR.Point(270, 150));
 		game.addGameComponent(ship.gameComponent);
 		document.body.addEventListener('keydown', onKeyDown, false);
 		document.body.addEventListener('keyup', onKeyUp, false);
