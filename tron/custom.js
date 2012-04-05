@@ -27,6 +27,8 @@
 				speed          = 1,
 				maxSpeed       = 25,
 				drag           = 0.9,
+				degree         = Math.PI / 180,
+				angle          = 0,
 				i;
 
 			for (i = 0; i < 10; i +=1) {
@@ -87,13 +89,16 @@
 				if (isRollingLeft && ! isRollingRight) {
 					if (velocity.x > maxSpeed * -1) {
 						velocity.x -= speed;
+						angle -= 2*degree;
 					}
 				} else if (isRollingRight && ! isRollingLeft) {
 					if (velocity.x < maxSpeed) {
 						velocity.x += speed;
+						angle += 2*degree
 					}
 				} else {
 					velocity.x *= drag;
+					angle *= drag;
 				}
 
 				position.x += velocity.x;
@@ -115,7 +120,11 @@
 			this.gameComponent.draw = function (c) {
 				var dx = Math.floor(299 / 60);
 				if (imagesLoaded) {
-					c.drawImage(textures[Math.floor(position.y / dx)], position.x - halfWidth, position.y - halfHeight);
+					c.save();
+					c.translate(position.x, position.y);
+					c.rotate(angle);
+					c.drawImage(textures[Math.floor(position.y / dx)], -halfWidth, -halfHeight);
+					c.restore();
 				}
 			};
 		},
