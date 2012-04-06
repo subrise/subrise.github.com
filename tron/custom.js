@@ -9,6 +9,7 @@
  */
 (function (window, document, SR, undefined) {
 	var game = new SR.Game(),
+		fps = 0,
 		// Defining classes
 		Ship = function (pPosition) {
 			var texture = new Image(),
@@ -29,15 +30,22 @@
 				drag           = 0.9,
 				degree         = Math.PI / 180,
 				angle          = 0,
-				i;
+				i,
+				totalFrames    = 60,
+				framesLoaded   = 0,
+				onFrameLoaded  = function () {
+					framesLoaded += 1;
+				};
 
 			for (i = 0; i < 10; i +=1) {
 				textures[i] = new Image();
 				textures[i].src = './img/render/spaceship000'+i+'.png';
+				textures[i].addEventListener('load', onFrameLoaded, false);
 			}
 			for (i = 10; i < 61; i +=1) {
 				textures[i] = new Image();
 				textures[i].src = './img/render/spaceship00'+i+'.png';
+				textures[i].addEventListener('load', onFrameLoaded, false);
 			}
 			// Todo check when images have loaded
 			imagesLoaded = true;
@@ -74,31 +82,32 @@
 				}
 			};
 
-			this.gameComponent.update = function (e) {
+			/* et: elapsed time, ef: elapsed frames */
+			this.gameComponent.update = function (et, ef) {
 				if (isAscending && ! isDescending) {
 					if (velocity.y > maxSpeed * -1) {
-						velocity.y -= speed;
+						velocity.y -= speed * ef;
 					}
 				} else if (isDescending && ! isAscending) {
 					if (velocity.y < maxSpeed) {
-						velocity.y += speed;
+						velocity.y += speed * ef;
 					}
 				} else {
-					velocity.y *= drag;
+					velocity.y *= drag * ef;
 				}
 				if (isRollingLeft && ! isRollingRight) {
 					if (velocity.x > maxSpeed * -1) {
-						velocity.x -= speed;
-						angle -= 2*degree;
+						velocity.x -= speed * ef;
+						angle -= 2 * degree * ef;
 					}
 				} else if (isRollingRight && ! isRollingLeft) {
 					if (velocity.x < maxSpeed) {
-						velocity.x += speed;
-						angle += 2*degree
+						velocity.x += speed * ef;
+						angle += 2 * degree * ef;
 					}
 				} else {
-					velocity.x *= drag;
-					angle *= drag;
+					velocity.x *= drag * ef;
+					angle *= drag * ef;
 				}
 
 				position.x += velocity.x;
@@ -119,12 +128,14 @@
 
 			this.gameComponent.draw = function (c) {
 				var dx = Math.floor(299 / 60);
-				if (imagesLoaded) {
+				if (framesLoaded >= totalFrames) {
 					c.save();
 					c.translate(position.x, position.y);
 					c.rotate(angle);
 					c.drawImage(textures[Math.floor(position.y / dx)], -halfWidth, -halfHeight);
 					c.restore();
+				} else {
+					c.fillText('Loading: '+framesLoaded+'/'+totalFrames, position.x, position.y);
 				}
 			};
 		},
@@ -140,6 +151,14 @@
 			ship.onKeyUp(e);
 		};
 
+		game.update = function (e) {
+			fps = Math.floor(1000 / e);
+		};
+
+		game.draw = function (c) {
+			c.font = 'Bold 12px sans-serif';
+			c.fillText("FPS: " + fps, 10, 10);
+		};
 
 
 	// Initializing and playing game when window has loaded
