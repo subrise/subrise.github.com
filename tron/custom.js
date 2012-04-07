@@ -8,13 +8,9 @@
  * Start Date: tuesday March 27 2012 8:48 PM
  */
 (function (window, document, SR, undefined) {
-	var game = new SR.Game(),
-		fps = 0,
-		// Defining classes
-		Ship = function (pPosition) {
-			var texture = new Image(),
-				textures       = [],
-				imagesLoaded   = false,
+	// Defining classes
+	var Ship = function (game, pPosition) {
+			var textures       = [],
 				position       = pPosition || SR.Point(),
 				velocity       = SR.Point(),
 				isDescending   = false,
@@ -28,11 +24,12 @@
 				speed          = 1,
 				maxSpeed       = 25,
 				drag           = 0.9,
-				degree         = Math.PI / 180,
+				dAngle         = (Math.PI / 180) * 2,
 				angle          = 0,
 				i,
 				totalFrames    = 60,
 				framesLoaded   = 0,
+				gameComponent  = new SR.GameComponent(),
 				onFrameLoaded  = function () {
 					framesLoaded += 1;
 				};
@@ -47,12 +44,8 @@
 				textures[i].src = './img/render/spaceship00'+i+'.png';
 				textures[i].addEventListener('load', onFrameLoaded, false);
 			}
-			// Todo check when images have loaded
-			imagesLoaded = true;
 
-			this.gameComponent = new SR.GameComponent();
-
-			this.onKeyDown = function (e) {
+			document.body.addEventListener('keydown', function (e) {
 				if (e.keyCode === 40) {
 					isDescending = true; 
 				}
@@ -65,9 +58,9 @@
 				if (e.keyCode === 39) {
 					isRollingRight = true;
 				}
-			};
+			}, false);
 
-			this.onKeyUp = function (e) {
+			document.body.addEventListener('keyup', function (e) {
 				if (e.keyCode === 40) {
 					isDescending = false; 
 				}
@@ -80,54 +73,63 @@
 				if (e.keyCode === 39) {
 					isRollingRight = false;
 				}
-			};
+			}, false);
 
 			/* et: elapsed time, ef: elapsed frames */
-			this.gameComponent.update = function (et, ef) {
+			gameComponent.update = function (et, ef) {
 				if (isAscending && ! isDescending) {
 					if (velocity.y > maxSpeed * -1) {
-						velocity.y -= speed * ef;
+						velocity.y -= speed;
 					}
 				} else if (isDescending && ! isAscending) {
 					if (velocity.y < maxSpeed) {
-						velocity.y += speed * ef;
+						velocity.y += speed;
 					}
 				} else {
-					velocity.y *= drag * ef;
+					velocity.y *= drag;
 				}
+
 				if (isRollingLeft && ! isRollingRight) {
 					if (velocity.x > maxSpeed * -1) {
-						velocity.x -= speed * ef;
-						angle -= 2 * degree * ef;
+						velocity.x -= speed;
+						if (angle > -1 * (Math.PI / 2)) {
+							angle -= dAngle * ef;
+						}
 					}
 				} else if (isRollingRight && ! isRollingLeft) {
 					if (velocity.x < maxSpeed) {
-						velocity.x += speed * ef;
-						angle += 2 * degree * ef;
+						velocity.x += speed;
+						if (angle < Math.PI / 2) {
+							angle += dAngle * ef;
+						}
 					}
 				} else {
-					velocity.x *= drag * ef;
-					angle *= drag * ef;
+					velocity.x *= drag;
+					angle *= drag;
 				}
 
-				position.x += velocity.x;
-				position.y += velocity.y;
+				if (Math.abs(angle) > Math.PI * 2) {
+					angle = 0;
+				}
+
+				position.x += velocity.x * ef;
+				position.y += velocity.y * ef;
 
 				// Set boundaries, so ship won't fly of screen
 				if (position.x < 0) {
 					position.x = 0;
-				} else if (position.x > 539) {
-					position.x = 539;
+				} else if (position.x > game.getWidth()) {
+					position.x = game.getWidth();
 				} 
 				if (position.y < 50) {
 					position.y = 50;
-				} else if (position.y > 220) {
-					position.y = 220;
+				} else if (position.y > game.getHeight() - 60) {
+					position.y = game.getHeight() - 60;
 				}
 			};
 
-			this.gameComponent.draw = function (c) {
-				var dx = Math.floor(299 / 60);
+			gameComponent.draw = function (c) {
+				var dx = Math.floor(game.getHeight() / 60);
 				if (framesLoaded >= totalFrames) {
 					c.save();
 					c.translate(position.x, position.y);
@@ -138,36 +140,33 @@
 					c.fillText('Loading: '+framesLoaded+'/'+totalFrames, position.x, position.y);
 				}
 			};
+
+			game.addGameComponent(gameComponent);
 		},
 		Rock = function () {
 			this.gameComponent = new SR.GameComponent();
-		},
-		// Declaring game variables
-		ship,
-		onKeyDown = function (e) {
-			ship.onKeyDown(e);
-		},
-		onKeyUp = function (e) {
-			ship.onKeyUp(e);
 		};
 
-		game.update = function (e) {
-			fps = Math.floor(1000 / e);
-		};
-
-		game.draw = function (c) {
-			c.font = 'Bold 12px sans-serif';
-			c.fillText("FPS: " + fps, 10, 10);
-		};
 
 
 	// Initializing and playing game when window has loaded
 	window.addEventListener('load', function () {
-		game.init(539, 299);
-		ship = new Ship(new SR.Point(270, 150));
-		game.addGameComponent(ship.gameComponent);
-		document.body.addEventListener('keydown', onKeyDown, false);
-		document.body.addEventListener('keyup', onKeyUp, false);
+		var game = new SR.Game(),
+			fps  = 0,
+			ship;
+
+		game.update = function (e) {
+			fps = Math.floor(100 / e);
+		};
+
+		game.draw = function (c) {
+			c.font = 'Bold 12px sans-serif';
+			c.fillText("FPS: " + fps, 10, 20);
+		};
+
+		// game.init(539, 299);
+		game.init();
+		ship = new Ship(game, new SR.Point(270, 150));
 	}, false);
 
 }(this, this.document, this.SUBRISE));
