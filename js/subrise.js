@@ -1,5 +1,5 @@
 /*!
- * Subrise JavaScript Library v1.0.1 beta
+ * Subrise JavaScript Library v1.0.3 beta
  * http://subrise.com/
  *
  * Copyright 2012, Subrise Games
@@ -9,11 +9,11 @@
  *
  * Author: Sammy Hubner
  * Date: November 27 2011
- * Last modified: April 6 2012
+ * Last modified: April 9 2012
  */
 (function (window, document, undefined) {
 	'use strict';
-	var version = '1.0.2 beta',
+	var version = '1.0.3 beta',
 		requestAnimFrame = (function () {
 			return window.requestAnimationFrame    ||
 				window.webkitRequestAnimationFrame ||
@@ -48,12 +48,18 @@
 	SUBRISE.Game = function () {
 		var prevTime = new Date(),
 			canvas,
-			canvasWidth = window.innerWidth,
-			canvasHeight = window.innerHeight,
+			canvasWidth,
+			canvasHeight,
+			fullScreen = true,
 			context,
 			gameComponents = [],
 			that = this,
 			_resetCanvas = function () {
+				console.log('reset');
+				if (fullScreen) {
+					canvasWidth  = window.innerWidth;
+					canvasHeight = window.innerHeight;
+				}
 				canvas.width  = canvasWidth;
 				canvas.height = canvasHeight;
 				that.resetCanvas();
@@ -88,6 +94,9 @@
 
 		// Setup the game canvas and insert it into the body, return false when browser doesn't support canvas.
 		this.init = function (width, height) {
+			if (width > 0) {
+				fullScreen = false;
+			}
 			canvasWidth  = width  || window.innerWidth;
 			canvasHeight = height || window.innerHeight;
 			canvas = document.createElement('canvas');
