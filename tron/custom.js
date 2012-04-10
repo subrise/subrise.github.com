@@ -9,9 +9,9 @@
  */
 (function (window, document, SR, undefined) {
 	// Defining classes
-	var Ship = function (game, pPosition) {
+	var Ship = function (game) {
 			var textures       = [],
-				position       = pPosition || SR.Point(),
+				position       = new SR.Point(game.getWidth() / 2, game.getHeight() / 2),
 				velocity       = SR.Point(),
 				isDescending   = false,
 				isAscending    = false,
@@ -143,8 +143,22 @@
 
 			game.addGameComponent(gameComponent);
 		},
-		Rock = function () {
-			this.gameComponent = new SR.GameComponent();
+		Target = function (game) {
+			var gameComponent = new SR.GameComponent(),
+				texture = new Image(),
+				position = new SR.Point(game.getWidth() / 2, game.getHeight() / 2),
+				imageLoaded = false;
+
+			texture.src = './img/target.png';
+			texture.addEventListener('load', function () { imageLoaded = true; }, false);
+
+			gameComponent.draw = function (c) {
+				if (imageLoaded) {
+					c.drawImage(texture, position.x - texture.width / 2, position.y - texture.height / 2);
+				}
+			};
+
+			game.addGameComponent(gameComponent);
 		};
 
 
@@ -153,20 +167,22 @@
 	window.addEventListener('load', function () {
 		var game = new SR.Game(),
 			fps  = 0,
-			ship;
+			ship,
+			target;
+
+		// game.init(539, 299);
+		game.init();
+		target = new Target(game);
+		ship = new Ship(game);
 
 		game.update = function (e) {
-			fps = Math.floor(100 / e);
+			fps = Math.floor(1000 / e);
 		};
 
 		game.draw = function (c) {
 			c.font = 'Bold 12px sans-serif';
 			c.fillText("FPS: " + fps, 10, 20);
 		};
-
-		// game.init(539, 299);
-		game.init();
-		ship = new Ship(game, new SR.Point(270, 150));
 	}, false);
 
 }(this, this.document, this.SUBRISE));
