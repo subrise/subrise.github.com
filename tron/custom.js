@@ -9,9 +9,10 @@
  */
 (function (window, document, SR, undefined) {
 	// Defining classes
-	var Ship = function (game) {
-			var textures       = [],
-				position       = new SR.Point(game.getWidth() / 2, game.getHeight() / 2),
+	var Ship = function (game, pPoint) {
+			var that           = this,
+				textures       = [],
+				position       = pPoint || new SR.Point(game.getWidth() / 2, game.getHeight() / 2),
 				velocity       = SR.Point(),
 				isDescending   = false,
 				isAscending    = false,
@@ -21,27 +22,36 @@
 				height         = 240,
 				halfWidth      = width / 2,
 				halfHeight     = height / 2,
+				canvas         = document.createElement('canvas'),
+				context        = canvas.getContext('2d'),
 				speed          = 1,
 				maxSpeed       = 25,
 				drag           = 0.9,
 				dAngle         = (Math.PI / 180) * 2,
 				angle          = 0,
 				i,
-				totalFrames    = 60,
+				totalFrames    = 30,
 				framesLoaded   = 0,
 				gameComponent  = new SR.GameComponent(),
 				onFrameLoaded  = function () {
 					framesLoaded += 1;
 				};
 
+			canvas.width = width;
+			canvas.height = height;
+
+			that.getAltitude = function () {
+				return position.y;
+			};
+
 			for (i = 0; i < 10; i +=1) {
 				textures[i] = new Image();
-				textures[i].src = './img/render/spaceship000'+i+'.png';
+				textures[i].src = './img/recognizer/recognizer000'+i+'.png';
 				textures[i].addEventListener('load', onFrameLoaded, false);
 			}
-			for (i = 10; i < 61; i +=1) {
+			for (i = 10; i <= totalFrames; i +=1) {
 				textures[i] = new Image();
-				textures[i].src = './img/render/spaceship00'+i+'.png';
+				textures[i].src = './img/recognizer/recognizer00'+i+'.png';
 				textures[i].addEventListener('load', onFrameLoaded, false);
 			}
 
@@ -76,7 +86,7 @@
 			}, false);
 
 			/* et: elapsed time, ef: elapsed frames */
-			gameComponent.update = function (et, ef) {
+			this.update = function (et, ef) {
 				if (isAscending && ! isDescending) {
 					if (velocity.y > maxSpeed * -1) {
 						velocity.y -= speed;
@@ -128,37 +138,255 @@
 				}
 			};
 
-			gameComponent.draw = function (c) {
-				var dx = Math.floor(game.getHeight() / 60);
+			this.draw = function (c) {
+				var dx = Math.floor((game.getHeight() - 60) / totalFrames),
+					index;
 				if (framesLoaded >= totalFrames) {
-					c.save();
-					c.translate(position.x, position.y);
-					c.rotate(angle);
-					c.drawImage(textures[Math.floor(position.y / dx)], -halfWidth, -halfHeight);
-					c.restore();
+					index = Math.floor(position.y / dx);
+					if (index < 0) {
+						index = 0;
+					} else if (index > totalFrames) {
+						index = totalFrames;
+					}
+					context.clearRect(0, 0, width, height);
+					context.save();
+					context.translate(halfWidth, halfHeight);
+					context.rotate(angle);
+					context.drawImage(textures[index], -halfWidth, -halfHeight);
+					context.globalCompositeOperation = 'source-atop';
+					context.fillStyle = 'rgba(0, 0, 255, 0.3)';
+					context.fillRect(-halfWidth, -halfHeight, width, height);
+					context.restore();
+					c.drawImage(canvas, position.x - halfWidth, position.y - halfHeight);
 				} else {
+					c.fillStyle = '#ffffff';
 					c.fillText('Loading: '+framesLoaded+'/'+totalFrames, position.x, position.y);
 				}
 			};
-
-			game.addGameComponent(gameComponent);
 		},
-		Target = function (game) {
-			var gameComponent = new SR.GameComponent(),
-				texture = new Image(),
-				position = new SR.Point(game.getWidth() / 2, game.getHeight() / 2),
-				imageLoaded = false;
+		Enemy = function (game, pPoint, pColor) {
+			var that           = this,
+				textures       = [],
+				position       = pPoint || new SR.Point(game.getWidth() / 2, game.getHeight() / 2),
+				color          = pColor || 'rgba(255, 0, 0, 0.3)',
+				velocity       = SR.Point(),
+				isDescending   = false,
+				isAscending    = false,
+				isRollingLeft  = false,
+				isRollingRight = false,
+				width          = 320,
+				height         = 240,
+				halfWidth      = width / 2,
+				halfHeight     = height / 2,
+				canvas         = document.createElement('canvas'),
+				context        = canvas.getContext('2d'),
+				speed          = 1,
+				maxSpeed       = 25,
+				drag           = 0.9,
+				dAngle         = (Math.PI / 180) * 2,
+				angle          = 0,
+				i,
+				totalFrames    = 30,
+				framesLoaded   = 0,
+				gameComponent  = new SR.GameComponent(),
+				onFrameLoaded  = function () {
+					framesLoaded += 1;
+				};
 
-			texture.src = './img/target.png';
-			texture.addEventListener('load', function () { imageLoaded = true; }, false);
+			canvas.width = width;
+			canvas.height = height;
 
-			gameComponent.draw = function (c) {
-				if (imageLoaded) {
-					c.drawImage(texture, position.x - texture.width / 2, position.y - texture.height / 2);
+			that.getAltitude = function () {
+				return position.y;
+			};
+
+			for (i = 0; i < 10; i +=1) {
+				textures[i] = new Image();
+				textures[i].src = './img/recognizer/recognizer000'+i+'.png';
+				textures[i].addEventListener('load', onFrameLoaded, false);
+			}
+			for (i = 10; i <= totalFrames; i +=1) {
+				textures[i] = new Image();
+				textures[i].src = './img/recognizer/recognizer00'+i+'.png';
+				textures[i].addEventListener('load', onFrameLoaded, false);
+			}
+
+			document.body.addEventListener('keydown', function (e) {
+				if (e.keyCode === 83) {
+					isDescending = true; 
+				}
+				if (e.keyCode === 87) {
+					isAscending = true;
+				}
+				if (e.keyCode === 65) {
+					isRollingLeft = true;
+				}
+				if (e.keyCode === 68) {
+					isRollingRight = true;
+				}
+			}, false);
+
+			document.body.addEventListener('keyup', function (e) {
+				if (e.keyCode === 83) {
+					isDescending = false; 
+				}
+				if (e.keyCode === 87) {
+					isAscending = false;
+				}
+				if (e.keyCode === 65) {
+					isRollingLeft = false;
+				}
+				if (e.keyCode === 68) {
+					isRollingRight = false;
+				}
+			}, false);
+
+			/* et: elapsed time, ef: elapsed frames */
+			this.update = function (et, ef) {
+				if (isAscending && ! isDescending) {
+					if (velocity.y > maxSpeed * -1) {
+						velocity.y -= speed;
+					}
+				} else if (isDescending && ! isAscending) {
+					if (velocity.y < maxSpeed) {
+						velocity.y += speed;
+					}
+				} else {
+					velocity.y *= drag;
+				}
+
+				if (isRollingLeft && ! isRollingRight) {
+					if (velocity.x > maxSpeed * -1) {
+						velocity.x -= speed;
+						if (angle > -1 * (Math.PI / 2)) {
+							angle -= dAngle * ef;
+						}
+					}
+				} else if (isRollingRight && ! isRollingLeft) {
+					if (velocity.x < maxSpeed) {
+						velocity.x += speed;
+						if (angle < Math.PI / 2) {
+							angle += dAngle * ef;
+						}
+					}
+				} else {
+					velocity.x *= drag;
+					angle *= drag;
+				}
+
+				if (Math.abs(angle) > Math.PI * 2) {
+					angle = 0;
+				}
+
+				position.x += velocity.x * ef;
+				position.y += velocity.y * ef;
+
+				// Set boundaries, so ship won't fly of screen
+				if (position.x < 0) {
+					position.x = 0;
+				} else if (position.x > game.getWidth()) {
+					position.x = game.getWidth();
+				} 
+				if (position.y < 50) {
+					position.y = 50;
+				} else if (position.y > game.getHeight() - 60) {
+					position.y = game.getHeight() - 60;
 				}
 			};
 
-			game.addGameComponent(gameComponent);
+			this.draw = function (c) {
+				var dx = Math.floor((game.getHeight() - 60) / totalFrames),
+					index;
+				if (framesLoaded >= totalFrames) {
+					index = Math.floor(position.y / dx);
+					if (index < 0) {
+						index = 0;
+					} else if (index > totalFrames) {
+						index = totalFrames;
+					}
+					context.clearRect(0, 0, width, height);
+					context.save();
+					context.translate(halfWidth, halfHeight);
+					context.rotate(angle);
+					context.drawImage(textures[index], -halfWidth, -halfHeight);
+					context.globalCompositeOperation = 'source-atop';
+					context.fillStyle = color;
+					context.fillRect(-halfWidth, -halfHeight, width, height);
+					context.restore();
+					c.drawImage(canvas, position.x - halfWidth, position.y - halfHeight);
+				} else {
+					c.fillStyle = '#ffffff';
+					c.fillText('Loading: '+framesLoaded+'/'+totalFrames, position.x, position.y);
+				}
+			};
+		},
+		Grid = function (game) {
+			var that = this,
+				canvasWidth,
+				canvasHeight,
+				centerX,
+				horizon,
+				dx = 64,
+				dy = 32,
+				modifierX = 3,
+				modifierY = 1.3,
+				yOffset = 0;
+			that.update = function (t, f) {
+				canvasWidth  = Math.ceil(game.getWidth());
+				canvasHeight = Math.ceil(game.getHeight());
+				centerX      = Math.floor(canvasWidth / 2);
+				horizon      = Math.floor(canvasHeight / 2);
+				yOffset += 2;
+				if (yOffset > 32) {
+					yOffset = 0;
+				}
+			};
+
+			that.draw = function (c) {
+				var i, j,
+					dx = 64,
+					dy = 32;
+
+				// Style
+				c.strokeStyle = '#fff';
+				c.lineWidth = 2;
+
+				// Vertical Lines
+				c.beginPath();  
+				c.moveTo(centerX, horizon);
+				c.lineTo(centerX, canvasHeight);
+
+				i = centerX;
+				j = centerX;
+				while ( i < canvasWidth) {
+					i += dx;
+					j += dx * modifierX;
+					c.moveTo(i, horizon);
+					c.lineTo(j, canvasHeight);
+				}
+				i = centerX;
+				j = centerX;
+				while (i > 0) {
+					i -= dx;
+					j -= dx * modifierX;
+					c.moveTo(i, horizon);
+					c.lineTo(j, canvasHeight);
+				}
+
+				// Horizontal lines
+				c.moveTo(0, horizon);
+				c.lineTo(canvasWidth, horizon);
+
+				i = horizon + yOffset;
+				while (i < canvasHeight) {
+					c.moveTo(0, i);
+					c.lineTo(canvasWidth, i);
+					i += dy;
+					dy *= modifierY;
+				}
+
+				c.stroke();
+			};
 		};
 
 
@@ -166,20 +394,35 @@
 	// Initializing and playing game when window has loaded
 	window.addEventListener('load', function () {
 		var game = new SR.Game(),
+			grid = new Grid(game),
 			fps  = 0,
 			ship,
-			target;
+			enemyA;
 
 		// game.init(539, 299);
 		game.init();
-		target = new Target(game);
 		ship = new Ship(game);
+		enemyA = new Enemy(game, new SR.Point(game.getWidth() / 2, 100));
 
-		game.update = function (e) {
-			fps = Math.floor(1000 / e);
+		game.update = function (t, f) {
+			grid.update(t, f);
+			enemyA.update(t, f);
+			ship.update(t, f);
+			fps = Math.floor(1000 / t);
 		};
 
 		game.draw = function (c) {
+			grid.draw(c);
+
+			if (enemyA.getAltitude() > ship.getAltitude()) {
+				ship.draw(c);
+				enemyA.draw(c);
+			} else {
+				enemyA.draw(c);
+				ship.draw(c);
+			}
+
+			c.fillStyle = '#ffffff';
 			c.font = 'Bold 12px sans-serif';
 			c.fillText("FPS: " + fps, 10, 20);
 		};

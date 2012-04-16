@@ -55,7 +55,6 @@
 			gameComponents = [],
 			that = this,
 			_resetCanvas = function () {
-				console.log('reset');
 				if (fullScreen) {
 					canvasWidth  = window.innerWidth;
 					canvasHeight = window.innerHeight;
