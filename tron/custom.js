@@ -327,25 +327,41 @@
 				centerX,
 				horizon,
 				dx = 64,
-				dy = 32,
+				dy = 0.1,
 				modifierX = 3,
-				modifierY = 1.3,
-				yOffset = 0;
+				horizontalLines = [],
+				timer = 0,
+				spawnThreshold = 250;
+
 			that.update = function (t, f) {
-				canvasWidth  = Math.ceil(game.getWidth());
-				canvasHeight = Math.ceil(game.getHeight());
+				var i, l;
+
+				canvasWidth  = game.getWidth();
+				canvasHeight = game.getHeight();
 				centerX      = Math.floor(canvasWidth / 2);
 				horizon      = Math.floor(canvasHeight / 2);
-				yOffset += 2;
-				if (yOffset > 32) {
-					yOffset = 0;
+				timer += t;
+				if (timer > spawnThreshold) {
+					timer = 0;
+					horizontalLines.push({
+						'y' : horizon,
+						'velocity' : 0
+					});
+				}
+				l = horizontalLines.length;
+				for (i = 0; i < l; i += 1) {
+					if (horizontalLines[i]) {
+						horizontalLines[i].velocity += f * dy;
+						horizontalLines[i].y += horizontalLines[i].velocity;
+						if (horizontalLines[i].y > canvasHeight) {
+							horizontalLines.splice(i, 1);
+						}
+					}
 				}
 			};
 
 			that.draw = function (c) {
-				var i, j,
-					dx = 64,
-					dy = 32;
+				var i, j, l;
 
 				// Style
 				c.strokeStyle = '#fff';
@@ -377,15 +393,39 @@
 				c.moveTo(0, horizon);
 				c.lineTo(canvasWidth, horizon);
 
-				i = horizon + yOffset;
-				while (i < canvasHeight) {
-					c.moveTo(0, i);
-					c.lineTo(canvasWidth, i);
-					i += dy;
-					dy *= modifierY;
+				l = horizontalLines.length;
+				for (i = 0; i < l; i += 1) {
+					c.moveTo(0, horizontalLines[i].y);
+					c.lineTo(canvasWidth, horizontalLines[i].y);
 				}
 
 				c.stroke();
+			};
+		},
+		Target = function (game, pPosition) {
+			var that = this,
+				position = pPosition || new SR.Point(),
+				radius = 1,
+				dSpeed = 0.02
+				speed = 0;
+
+			that.update = function (t, f) {
+				speed += f * dSpeed;
+				radius += speed;
+				if (radius > 100) {
+					radius = 1;
+					speed = 0;
+					position.x = Math.random() * game.getWidth();
+					position.y = game.getHeight() / 2;
+				}
+			};
+
+			that.draw = function (c) {
+				c.fillStyle = '#fff';
+				c.beginPath();
+				c.arc(position.x, position.y, radius, 0, Math.PI * 2);
+				c.closePath();
+				c.fill();
 			};
 		};
 
@@ -394,18 +434,23 @@
 	// Initializing and playing game when window has loaded
 	window.addEventListener('load', function () {
 		var game = new SR.Game(),
-			grid = new Grid(game),
 			fps  = 0,
+			grid,
 			ship,
-			enemyA;
+			enemyA,
+			target;
 
 		// game.init(539, 299);
 		game.init();
+		grid = new Grid(game);
 		ship = new Ship(game);
 		enemyA = new Enemy(game, new SR.Point(game.getWidth() / 2, 100));
+		// target = new Target(game, new SR.Point(game.getWidth() / 2, game.getHeight() / 2));
+		
 
 		game.update = function (t, f) {
 			grid.update(t, f);
+			// target.update(t, f);
 			enemyA.update(t, f);
 			ship.update(t, f);
 			fps = Math.floor(1000 / t);
@@ -413,6 +458,7 @@
 
 		game.draw = function (c) {
 			grid.draw(c);
+			// target.draw(c);
 
 			if (enemyA.getAltitude() > ship.getAltitude()) {
 				ship.draw(c);
